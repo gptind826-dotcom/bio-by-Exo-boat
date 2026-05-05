@@ -187,10 +187,7 @@ async def check_subscription_change(user_id: int, username: str, first_name: str
     
     for entity in SUBSCRIPTION_ENTITIES:
         try:
-            chat_member = await context.bot.get_chat_member(
-                chat_id=entity["id"],
-                user_id=user_id
-            )
+            chat_member = await context.bot.get_chat_member(chat_id=entity["id"], user_id=user_id)
             if chat_member.status in ['left', 'kicked']:
                 current_status.append(f"❌ {entity['name']}")
                 unjoined.append(entity)
@@ -243,10 +240,7 @@ async def force_subscription_check(update: Update, context: ContextTypes.DEFAULT
         keyboard = []
         for entity in unjoined_entities:
             if entity["link"]:
-                keyboard.append([InlineKeyboardButton(
-                    f"📢 𝐉𝐨𝐢𝐧 {entity['name']}",
-                    url=entity["link"]
-                )])
+                keyboard.append([InlineKeyboardButton(f"📢 𝐉𝐨𝐢𝐧 {entity['name']}", url=entity["link"])])
         keyboard.append([InlineKeyboardButton("✅ 𝐕𝐞𝐫𝐢𝐟𝐲 𝐒𝐮𝐛𝐬𝐜𝐫𝐢𝐩𝐭𝐢𝐨𝐧", callback_data="verify_subscription")])
         reply_markup = InlineKeyboardMarkup(keyboard)
         joined_count = TOTAL_SUBSCRIPTIONS - len(unjoined_entities)
@@ -452,7 +446,7 @@ async def process_bio_upload(update: Update, context: ContextTypes.DEFAULT_TYPE,
     if region:
         params["region"] = region
     
-    await update.message.reply_text("⏳ 𝐏𝐫𝐨𝐜𝐞𝐬𝐬𝐢𝐧𝐠...")
+    await update.message.reply_text("⏳ 𝐏𝐥𝐞𝐚𝐬𝐞 𝐰𝐚𝐢𝐭, 𝐩𝐫𝐨𝐜𝐞𝐬𝐬𝐢𝐧𝐠 𝐲𝐨𝐮𝐫 𝐫𝐞𝐪𝐮𝐞𝐬𝐭...")
     
     try:
         response = requests.get(API_URL, params=params, timeout=30)
@@ -464,32 +458,108 @@ async def process_bio_upload(update: Update, context: ContextTypes.DEFAULT_TYPE,
             save_users_data(users_data)
         
         if result.get("code") == 200:
+            # POLITE BOLD STYLE SUCCESS MESSAGE
+            method_display = {
+                'uid': '🔐 UID + Password',
+                'access': '🎫 Access Token',
+                'jwt': '🔑 JWT Token'
+            }.get(method, 'Unknown')
+            
+            region_display = {
+                'IND': '🇮🇳 India',
+                'ME': '🇦🇪 Middle East',
+                'VN': '🇻🇳 Vietnam',
+                'BD': '🇧🇩 Bangladesh',
+                'PK': '🇵🇰 Pakistan',
+                'SG': '🇸🇬 Singapore',
+                'BR': '🇧🇷 Brazil',
+                'NA': '🇺🇸 North America',
+                'ID': '🇮🇩 Indonesia',
+                'RU': '🇷🇺 Russia',
+                'TH': '🇹🇭 Thailand'
+            }.get(result.get('selected_region'), result.get('selected_region', 'Auto'))
+            
             reply = f"""
-✅ 𝐒𝐔𝐂𝐂𝐄𝐒𝐒!
+╔══════════════════════════════════════╗
+║          ✅ 𝐒𝐔𝐂𝐂𝐄𝐒𝐒! ✅            ║
+╚══════════════════════════════════════╝
 
-📝 𝐁𝐢𝐨: {result['bio']}
-🔑 𝐌𝐞𝐭𝐡𝐨𝐝: {result['login_method']}
-👤 𝐔𝐈𝐃: {result['uid']}
-🌍 𝐑𝐞𝐠𝐢𝐨𝐧: {result['selected_region']}
+𝐃𝐞𝐚𝐫 𝐔𝐬𝐞𝐫, 𝐲𝐨𝐮𝐫 𝐅𝐫𝐞𝐞 𝐅𝐢𝐫𝐞 𝐛𝐢𝐨 𝐡𝐚𝐬 𝐛𝐞𝐞𝐧 
+𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 𝐮𝐩𝐝𝐚𝐭𝐞𝐝!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 𝐍𝐞𝐰 𝐁𝐢𝐨:      {result['bio']} 🔥
+🔑 𝐋𝐨𝐠𝐢𝐧 𝐌𝐞𝐭𝐡𝐨𝐝:  {method_display}
+👤 𝐘𝐨𝐮𝐫 𝐔𝐈𝐃:       {result['uid']}
+🌍 𝐒𝐞𝐥𝐞𝐜𝐭𝐞𝐝 𝐑𝐞𝐠𝐢𝐨𝐧:  {region_display}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💫 𝐘𝐨𝐮𝐫 𝐛𝐢𝐨 𝐢𝐬 𝐧𝐨𝐰 𝐥𝐢𝐯𝐞 𝐨𝐧 𝐲𝐨𝐮𝐫 𝐩𝐫𝐨𝐟𝐢𝐥𝐞!
+
+𝐓𝐡𝐚𝐧𝐤 𝐲𝐨𝐮 𝐟𝐨𝐫 𝐮𝐬𝐢𝐧𝐠 𝐨𝐮𝐫 𝐬𝐞𝐫𝐯𝐢𝐜𝐞. 💐
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 𝐁𝐨𝐭 𝐛𝐲: {BOT_DISPLAY_NAME}
 """
         else:
             reply = f"""
-❌ 𝐅𝐀𝐈𝐋𝐄𝐃!
+╔══════════════════════════════════════╗
+║          ❌ 𝐅𝐀𝐈𝐋𝐄𝐃! ❌            ║
+╚══════════════════════════════════════╝
 
-𝐒𝐭𝐚𝐭𝐮𝐬: {result.get('status')}
-𝐂𝐨𝐝𝐞: {result.get('code')}
+𝐃𝐞𝐚𝐫 𝐔𝐬𝐞𝐫, 𝐰𝐞 𝐚𝐫𝐞 𝐮𝐧𝐚𝐛𝐥𝐞 𝐭𝐨 𝐮𝐩𝐝𝐚𝐭𝐞 
+𝐲𝐨𝐮𝐫 𝐅𝐫𝐞𝐞 𝐅𝐢𝐫𝐞 𝐛𝐢𝐨 𝐚𝐭 𝐭𝐡𝐢𝐬 𝐦𝐨𝐦𝐞𝐧𝐭.
 
-💡 𝐓𝐢𝐩: 𝐓𝐫𝐲 𝐔𝐈𝐃 + 𝐏𝐀𝐒𝐒𝐖𝐎𝐑𝐃 𝐦𝐞𝐭𝐡𝐨𝐝
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 𝐒𝐭𝐚𝐭𝐮𝐬: {result.get('status')}
+🔢 𝐂𝐨𝐝𝐞: {result.get('code')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 𝐓𝐢𝐩: 𝐏𝐥𝐞𝐚𝐬𝐞 𝐭𝐫𝐲 𝐮𝐬𝐢𝐧𝐠 𝐭𝐡𝐞 
+🔐 𝐔𝐈𝐃 + 𝐏𝐀𝐒𝐒𝐖𝐎𝐑𝐃 𝐦𝐞𝐭𝐡𝐨𝐝
+
+𝐈𝐟 𝐭𝐡𝐞 𝐩𝐫𝐨𝐛𝐥𝐞𝐦 𝐩𝐞𝐫𝐬𝐢𝐬𝐭𝐬, 𝐩𝐥𝐞𝐚𝐬𝐞 
+𝐜𝐨𝐧𝐭𝐚𝐜𝐭 𝐬𝐮𝐩𝐩𝐨𝐫𝐭. 🙏
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 𝐁𝐨𝐭 𝐛𝐲: {BOT_DISPLAY_NAME}
 """
         
         user_id = update.effective_user.id
         if user_id == ADMIN_ID:
-            await update.message.reply_text(reply, reply_markup=get_admin_panel())
+            await update.message.reply_text(reply, parse_mode='Markdown', reply_markup=get_admin_panel())
         else:
-            await update.message.reply_text(reply, reply_markup=get_user_keyboard())
+            await update.message.reply_text(reply, parse_mode='Markdown', reply_markup=get_user_keyboard())
         
     except Exception as e:
-        await update.message.reply_text(f"❌ 𝐄𝐫𝐫𝐨𝐫: {str(e)}", reply_markup=get_user_keyboard())
+        error_reply = f"""
+╔══════════════════════════════════════╗
+║          ❌ 𝐄𝐑𝐑𝐎𝐑! ❌             ║
+╚══════════════════════════════════════╝
+
+𝐃𝐞𝐚𝐫 𝐔𝐬𝐞𝐫, 𝐚𝐧 𝐞𝐫𝐫𝐨𝐫 𝐨𝐜𝐜𝐮𝐫𝐫𝐞𝐝 𝐰𝐡𝐢𝐥𝐞 
+𝐩𝐫𝐨𝐜𝐞𝐬𝐬𝐢𝐧𝐠 𝐲𝐨𝐮𝐫 𝐫𝐞𝐪𝐮𝐞𝐬𝐭.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 𝐄𝐫𝐫𝐨𝐫: {str(e)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+𝐏𝐥𝐞𝐚𝐬𝐞 𝐭𝐫𝐲 𝐚𝐠𝐚𝐢𝐧 𝐥𝐚𝐭𝐞𝐫 𝐨𝐫 𝐜𝐨𝐧𝐭𝐚𝐜𝐭 
+𝐬𝐮𝐩𝐩𝐨𝐫𝐭 𝐢𝐟 𝐭𝐡𝐞 𝐢𝐬𝐬𝐮𝐞 𝐩𝐞𝐫𝐬𝐢𝐬𝐭𝐬. 🙏
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 𝐁𝐨𝐭 𝐛𝐲: {BOT_DISPLAY_NAME}
+"""
+        if user_id == ADMIN_ID:
+            await update.message.reply_text(error_reply, parse_mode='Markdown', reply_markup=get_admin_panel())
+        else:
+            await update.message.reply_text(error_reply, parse_mode='Markdown', reply_markup=get_user_keyboard())
     
     context.user_data.clear()
 
