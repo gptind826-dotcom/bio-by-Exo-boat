@@ -2,7 +2,6 @@ services:
   - type: web
     name: long-bio-bot
     runtime: python
-    repo: https://github.com/yourusername/your-repo-name
     plan: free
     region: singapore
     buildCommand: |
@@ -12,4 +11,3 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-    autoDeploy: true
