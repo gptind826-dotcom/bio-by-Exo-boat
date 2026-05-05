@@ -1,13 +1,11 @@
 import logging
 import asyncio
-import secrets
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters, ConversationHandler
 import requests
 import json
 import os
-import sys
 from threading import Thread
 from flask import Flask, jsonify
 
@@ -26,7 +24,11 @@ def home():
     return jsonify({
         "status": "running",
         "bot": BOT_DISPLAY_NAME,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "stats": {
+            "total_users": len(users_data),
+            "total_channels": TOTAL_SUBSCRIPTIONS
+        }
     })
 
 @flask_app.route('/health')
@@ -44,10 +46,9 @@ BOT_USERNAME = "EXUFILEBOT"
 BOT_DISPLAY_NAME = "𝐋𝐎𝐍𝐆 𝐁𝐈𝐎 𝐁𝐎𝐓〆𝐄𝐗𝐔"
 
 # Conversation states
-METHOD_SELECTION, WAITING_UID, WAITING_PASSWORD, WAITING_ACCESS_TOKEN, WAITING_JWT, WAITING_BIO, WAITING_REGION = range(7)
+WAITING_UID, WAITING_PASSWORD, WAITING_ACCESS_TOKEN, WAITING_JWT, WAITING_BIO, WAITING_REGION = range(6)
 BAN_USER_STATE = 10
 UNBAN_USER_STATE = 11
-BROADCAST_STATE = 12
 
 # ============================================
 # CHANNELS AND GROUPS FOR SUBSCRIPTION
@@ -76,6 +77,12 @@ SUBSCRIPTION_ENTITIES = [
         "name": "𝐄𝐗𝐔〆𝐏𝐑𝐈𝐌𝐄",
         "type": "channel",
         "link": "https://t.me/exucodex"
+    },
+    {
+        "id": -1003744504956,
+        "name": "𝙹𝚄𝚂𝚃 𝙵𝚄𝙽 ⚡",
+        "type": "channel",
+        "link": "https://t.me/funcodex"
     }
 ]
 
@@ -344,7 +351,7 @@ async def verify_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"𝐀𝐟𝐭𝐞𝐫 𝐣𝐨𝐢𝐧𝐢𝐧𝐠, 𝐜𝐥𝐢𝐜𝐤 /𝐬𝐭𝐚𝐫𝐭"
             )
 
-# ============= BIO UPLOAD CONVERSATION HANDLERS =============
+# ============= BIO UPLOAD HANDLERS =============
 async def bio_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
@@ -458,7 +465,6 @@ async def process_bio_upload(update: Update, context: ContextTypes.DEFAULT_TYPE,
             save_users_data(users_data)
         
         if result.get("code") == 200:
-            # POLITE BOLD STYLE SUCCESS MESSAGE
             method_display = {
                 'uid': '🔐 UID + Password',
                 'access': '🎫 Access Token',
@@ -928,10 +934,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ============= MAIN =============
 def main():
+    # Start Flask thread for keep-alive
     flask_thread = Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
     
+    # Create application
     application = Application.builder().token(BOT_TOKEN).build()
     
     # Bio upload conversation
@@ -966,6 +974,7 @@ def main():
         fallbacks=[CommandHandler("cancel", start)],
     )
     
+    # Add handlers
     application.add_handler(bio_conv_handler)
     application.add_handler(ban_handler)
     application.add_handler(unban_handler)
@@ -989,6 +998,7 @@ def main():
     print(f"📢 Channels: {TOTAL_SUBSCRIPTIONS}")
     print(f"👥 Users: {len(users_data)}")
     
+    # Start polling
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
